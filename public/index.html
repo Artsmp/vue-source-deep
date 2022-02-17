@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>deep learn vue</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="/dist/umd/vue.js"></script>
+    <script>
+      let vm = new Vue({
+        el: '#app',
+        data() {
+          return {
+            name: 'artsmp',
+            age: 18,
+            address: {
+              number: 0,
+              text: '福州市',
+            },
+          }
+        },
+      })
+      vm._data.name = '666'
+      vm._data.address = { aa: 'aa' }
+      console.log('==>vm', vm)
+    </script>
+  </body>
+</html>
