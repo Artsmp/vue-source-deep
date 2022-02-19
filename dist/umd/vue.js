@@ -299,19 +299,9 @@
       }
     }
 
-  } // 把 data 数据都使用 Object.defineProperty 重新定义（不能兼容 IE8 及以下）
-
-
-  function observe(data) {
-    if (!isObj(data)) {
-      return;
-    }
-
-    return new Observer(data);
   }
 
   function defineReactive(data, key, value) {
-    console.log('==>data, key, value', data, key, value);
     observe(value); // 递归实现深度劫持
 
     Object.defineProperty(data, key, {
@@ -330,6 +320,15 @@
       }
 
     });
+  } // 把 data 数据都使用 Object.defineProperty 重新定义（不能兼容 IE8 及以下）
+
+
+  function observe(data) {
+    if (!isObj(data)) {
+      return;
+    }
+
+    return new Observer(data);
   }
 
   function initState(vm) {
