@@ -13,8 +13,9 @@ export function compileToFunction(template) {
   let root = parseHTML(template)
   // 2. AST语法树 -> render 函数
   let code = generate(root)
-  console.log('==>code', code)
-  return function render() {}
+  let render = `with(this){return ${code}}`
+  let renderFn = new Function(render)
+  return renderFn
 }
 
 // 生成html标签属性的字符串

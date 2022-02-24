@@ -215,8 +215,9 @@
     let root = parseHTML(template); // 2. AST语法树 -> render 函数
 
     let code = generate(root);
-    console.log('==>code', code);
-    return function render() {};
+    let render = `with(this){return ${code}}`;
+    let renderFn = new Function(render);
+    return renderFn;
   } // 生成html标签属性的字符串
 
   function genProps(attrs) {
@@ -307,6 +308,19 @@
       enumerable: false,
       configurable: false,
       value
+    });
+  } // 取值时实现代理效果
+
+  function proxy(vm, source, key) {
+    Object.defineProperty(vm, key, {
+      get() {
+        return vm[source][key];
+      },
+
+      set(newVal) {
+        vm[source][key] = newVal;
+      }
+
     });
   }
 
@@ -432,6 +446,11 @@
     let data = vm.$options.data; // 数据也要挂载一份到实例上
 
     data = vm._data = typeof data === 'function' ? data.call(this) : data; // 对象劫持，用户改变了数据我希望能够得到通知 => 刷新页面：数据变化视图变化 MVVM Object.defineProperty
+    // 为了让用户更好的使用，我希望可以直接 vm.xxx 取值
+
+    for (let key in data) {
+      proxy(vm, '_data', key);
+    }
 
     observe(data); // 响应式原理
   }
