@@ -8,8 +8,10 @@
   </head>
   <body>
     <div id="app" class="text">
-      <span style="color: red">name: {{name}}, age: {{age}}</span>
+      <span style="color: red">name: {{name}}</span>
+      <b style="background-color: #f99;">age: {{age}}</b>
     </div>
+    123123
     <script src="/dist/umd/vue.js"></script>
     <script>
       let vm = new Vue({
@@ -28,7 +30,7 @@
       })
       // vm._data.list.push({ id: 2, name: 'ls' })
       // console.log('==>vm', vm._data)
-      console.log(vm.name)
+      // console.log(vm.name)
     </script>
   </body>
 </html>

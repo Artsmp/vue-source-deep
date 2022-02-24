@@ -1,5 +1,7 @@
 // vue 入口文件，只是一个 Vue 的声明，主要功能是整合
 import { initMixin } from './init'
+import { renderMixin } from './render'
+import { lifecycleMixin } from './lifecycle'
 
 function Vue(options) {
   // 进行 Vue 的初始化操作
@@ -7,6 +9,7 @@ function Vue(options) {
 }
 // 把流程拆成一个个原型上的方法，通过引入文件的方式给Vue添加原型上的方法
 initMixin(Vue)
-// initRender(Vue)
+renderMixin(Vue)
+lifecycleMixin(Vue)
 
 export default Vue

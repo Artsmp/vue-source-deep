@@ -26,8 +26,10 @@ function genProps(attrs) {
     if (attr.name === 'style') {
       let styleObj = {}
       attr.value.split(';').forEach((item) => {
-        let [styleKey, styleVal] = item.split(':')
-        styleObj[styleKey.trim()] = styleVal.trim()
+        if (item) {
+          let [styleKey, styleVal] = item.split(':')
+          styleObj[styleKey.trim()] = styleVal.trim()
+        }
       })
       attr.value = styleObj
     }
@@ -71,6 +73,8 @@ function gen(node) {
 
 // 将AST转成 render函数能解析的字符串
 function generate(el) {
-  let code = `_c(${el.tag}, ${genProps(el.attrs)}, ${genChildren(el.children)})`
+  let code = `_c("${el.tag}", ${genProps(el.attrs)}, ${genChildren(
+    el.children
+  )})`
   return code
 }

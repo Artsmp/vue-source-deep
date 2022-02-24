@@ -229,8 +229,10 @@
       if (attr.name === 'style') {
         let styleObj = {};
         attr.value.split(';').forEach(item => {
-          let [styleKey, styleVal] = item.split(':');
-          styleObj[styleKey.trim()] = styleVal.trim();
+          if (item) {
+            let [styleKey, styleVal] = item.split(':');
+            styleObj[styleKey.trim()] = styleVal.trim();
+          }
         });
         attr.value = styleObj;
       }
@@ -284,7 +286,7 @@
 
 
   function generate(el) {
-    let code = `_c(${el.tag}, ${genProps(el.attrs)}, ${genChildren(el.children)})`;
+    let code = `_c("${el.tag}", ${genProps(el.attrs)}, ${genChildren(el.children)})`;
     return code;
   }
 
@@ -455,6 +457,101 @@
     observe(data); // 响应式原理
   }
 
+  class Watcher {
+    constructor(vm, exprOrFn, callback, options) {
+      this.vm = vm;
+      this.callback = callback;
+      this.options = options;
+      this.getter = exprOrFn; // 将内部传过来的回调函数放到 getter 属性上
+
+      this.get();
+    }
+
+    get() {
+      this.getter();
+    }
+
+  }
+
+  function patch(oldVnode, vnode) {
+    // 1. 判断是更新还是要渲染
+    const isRealElement = oldVnode.nodeType;
+
+    if (isRealElement) {
+      const oldElm = oldVnode;
+      const parentEl = oldElm.parentNode;
+      let el = createElm(vnode);
+      parentEl.insertBefore(el, oldElm.nextSibling);
+      parentEl.removeChild(oldElm);
+    } // 递归创建真实节点，替换老节点
+
+  } // 根据虚拟节点创建真实的节点
+
+  function createElm(vnode) {
+    let {
+      tag,
+      children,
+      key,
+      text
+    } = vnode;
+
+    if (typeof tag === 'string') {
+      // 标签
+      vnode.el = document.createElement(tag);
+      updateProps(vnode);
+      children.forEach(child => {
+        // 递归创建真实节点，并还给父节点
+        console.log(vnode.el);
+        return vnode.el.appendChild(createElm(child));
+      });
+    } else {
+      // 不是标签就是文本
+      // 虚拟dom上映射着真实dom，方便后续更新操作
+      vnode.el = document.createTextNode(text);
+    }
+
+    return vnode.el;
+  }
+
+  function updateProps(vnode) {
+    let newProps = vnode.data;
+    let el = vnode.el;
+
+    for (let key in newProps) {
+      if (key === 'style') {
+        for (let styleName in newProps.style) {
+          el.style[styleName] = newProps.style[styleName];
+        }
+      } else if (key === 'class') {
+        el.className = newProps.class;
+      } else {
+        el.setAttribute(key, newProps[key]);
+      }
+    }
+  }
+
+  function lifecycleMixin(Vue) {
+    Vue.prototype._update = function (vnode) {
+      const vm = this; // 我要通过虚拟dom，渲染出真实dom
+
+      vm.$el = patch(vm.$el, vnode); // 需要用虚拟节点创建出真实节点替换掉真实的$el
+    };
+  }
+  function mountComponent(vm, el) {
+    vm.$options;
+    vm.$el = el; // 真实的 dom 元素
+    // 渲染页面
+
+    let updateComponent = () => {
+      // 无论是渲染还是更新都会调用此方法
+      vm._update(vm._render()); // _render返回的是虚拟DOM,_update渲染成真实DOM
+
+    }; // 渲染Watcher 每个组件都有一个watcher
+
+
+    new Watcher(vm, updateComponent, () => {}, true);
+  }
+
   function initMixin(Vue) {
     // 初始化流程
     Vue.prototype._init = function (options) {
@@ -487,8 +584,70 @@
 
         const render = compileToFunction(template);
         options.render = render;
-      } // options.render
+      } // 渲染当前的组件（挂载组件）
 
+
+      mountComponent(vm, el);
+    };
+  }
+
+  function createElement(tag, data = {}, ...children) {
+    let key = data.key;
+
+    if (key) {
+      delete data.key;
+    }
+
+    return vnode(tag, data, key, children, undefined);
+  }
+  function createTextNode(text) {
+    return vnode(undefined, undefined, undefined, undefined, text);
+  }
+
+  function vnode(tag, data, key, children, text) {
+    return {
+      tag,
+      data,
+      key,
+      children,
+      text
+    };
+  } // 虚拟节点就是通过 _c、_v 实现用对象来描述dom的操作（是一个js对象）
+
+  /* 
+  将 template 转成 ast 语法树 -> 生成 render 方法 -> 生成虚拟dom -> 真实dom
+  更新流程：重新生成虚拟dom -> 真实dom
+  {
+    tag: "div",
+    key: undefined,
+    data: {},
+    children: [],
+    text: undefined
+  } 
+  */
+
+  function renderMixin(Vue) {
+    // _c 创建元素的虚拟节点
+    // _v 创建文本的虚拟节点
+    // _s JSON.stringify
+    Vue.prototype._c = function () {
+      return createElement(...arguments); // arguments: tag attrs child1, child2...
+    };
+
+    Vue.prototype._v = function (text) {
+      return createTextNode(text);
+    };
+
+    Vue.prototype._s = function (val) {
+      return val == null ? '' : typeof val === 'object' ? JSON.stringify(val) : val;
+    };
+
+    Vue.prototype._render = function () {
+      const vm = this;
+      const {
+        render
+      } = vm.$options;
+      return render.call(vm);
     };
   }
 
@@ -500,7 +659,9 @@
   } // 把流程拆成一个个原型上的方法，通过引入文件的方式给Vue添加原型上的方法
 
 
-  initMixin(Vue); // initRender(Vue)
+  initMixin(Vue);
+  renderMixin(Vue);
+  lifecycleMixin(Vue);
 
   return Vue;
 
